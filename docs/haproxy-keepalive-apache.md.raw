@@ -1,0 +1,104 @@
+Hướng dẫn triển khai Haproxy Keepalive cho Apache trên CentOS 7<br>
+
+## Tổng quan
+
+__HAProxy__ viết tắt của High Availability Proxy, là công cụ mã nguồn mở nổi tiếng ứng dụng cho giải pháp cân bằng tải TCP/HTTP cũng như giải pháp máy chủ Proxy (Proxy Server). HAProxy có thể chạy trên các mỗi trường Linux, Solaris, FreeBSD. Công dụng phổ biến nhất của HAProxy là cải thiện hiệu năng, tăng độ tin cậy của hệ thống máy chủ bằng cách phân phối khối lượng công việc trên nhiều máy chủ (như Web, App, cơ sở dữ liệu). HAProxy hiện đã và đang được sử dụng bởi nhiều website lớn như GoDaddy, GitHub, Bitbucket, Stack Overflow, Reddit, Speedtest.net, Twitter và trong nhiều sản phẩm cung cấp bởi Amazon Web Service.
+
+Dịch vụ __keepalived__ sử dụng với mục đích tạo ra virtual ip address (IP VIP) cho hệ thống. Tiến trình __keepalived__ có thể tự động giám sát dịch vụ hoặc hệ thống và có khả năng chịu lỗi cho hệ thống khi dịch vụ hoặc hệ điều hành xảy ra vấn đề. Trong bài hướng dẫn, tôi sẽ sử dụng __keepalived__ để tăng tính sẵn sàng cho dịch vụ cân bằng tải.
+
+
+## Phần 1. Chuẩn bị
+### Phân hoạch
+
+### Mô hình
+
+Mô hình triển khai
+
+Mô hình hoạt động
+
+## Phần 2. Cầu hình Apache
+
+Thực hiện tại `node1`
+```
+yum install httpd -y
+cat /etc/httpd/conf/httpd.conf | grep 'Listen 80'
+sed -i "s/Listen 80/Listen 10.10.10.86:80/g" /etc/httpd/conf/httpd.conf
+
+echo '<h1>Chào mừng tới Blog Cloud365 (Web1)</h1>' > /var/www/html/index.html
+systemctl start httpd
+systemctl enable httpd
+```
+
+Thực hiện tại `node2`
+```
+yum install httpd -y
+cat /etc/httpd/conf/httpd.conf | grep 'Listen 80'
+sed -i "s/Listen 80/Listen 10.10.10.87:80/g" /etc/httpd/conf/httpd.conf
+
+echo '<h1>Chào mừng tới Blog Cloud365 (Web2)</h1>' > /var/www/html/index.html
+systemctl start httpd
+systemctl enable httpd
+```
+
+Thực hiện tại `node3`
+```
+yum install httpd -y
+cat /etc/httpd/conf/httpd.conf | grep 'Listen 80'
+sed -i "s/Listen 80/Listen 10.10.10.88:80/g" /etc/httpd/conf/httpd.conf
+
+echo '<h1>Chào mừng tới Blog Cloud365 (Web3)</h1>' > /var/www/html/index.html
+systemctl start httpd
+systemctl enable httpd
+```
+
+## Phần 2. Triển khai Keepalive
+
+## Phần 3. Cài đặt Haproxy bản 1.8
+
+> Thực hiện trên tất cả các node
+
+Cài đặt
+```
+sudo yum install wget socat -y
+wget http://cbs.centos.org/kojifiles/packages/haproxy/1.8.1/5.el7/x86_64/haproxy18-1.8.1-5.el7.x86_64.rpm 
+yum install haproxy18-1.8.1-5.el7.x86_64.rpm -y
+```
+
+Tạo bản backup cho cấu hình mặc định và chỉnh sửa cấu hình HAproxy
+```
+cp /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.bak
+```
+
+Cầu hình Haproxy
+```
+echo '' > /etc/haproxy/haproxy.cfg
+```
+
+Cấu hình Log cho HAProxy
+```
+sed -i "s/#\$ModLoad imudp/\$ModLoad imudp/g" /etc/rsyslog.conf
+sed -i "s/#\$UDPServerRun 514/\$UDPServerRun 514/g" /etc/rsyslog.conf
+echo '$UDPServerAddress 127.0.0.1' >> /etc/rsyslog.conf
+
+echo 'local2.*    /var/log/haproxy.log' > /etc/rsyslog.d/haproxy.conf
+
+systemctl restart rsyslog
+```
+
+Bổ sung cấu hình cho phép kernel có thể binding tới IP VIP
+```
+echo 'net.ipv4.ip_nonlocal_bind = 1' >> /etc/sysctl.conf
+```
+
+Kiểm tra
+```
+$ sysctl -p
+
+net.ipv4.ip_nonlocal_bind = 1
+```
+
+Tắt dịch vụ HAProxy
+```
+systemctl stop haproxy
+systemctl disable haproxy
+```
