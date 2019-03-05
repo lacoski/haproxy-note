@@ -10,11 +10,7 @@ Dịch vụ __keepalived__ sử dụng với mục đích tạo ra virtual ip ad
 ## Phần 1. Chuẩn bị
 ### Phân hoạch
 
-| Hostname | Hardware                      | Interface                                               |
-|----------|-------------------------------|---------------------------------------------------------|
-| node1    | 2 Cpu - 2gb Ram - 25 gb Disk | ens160: 10.10.10.86 (Public) - ens192: 10.10.11.86 (Internal) |
-| node2    | 2 Cpu - 2gb Ram - 25 gb Disk | ens160: 10.10.10.87 (Public) - ens192: 10.10.11.87 (Internal) |
-| node3    | 2 Cpu - 2gb Ram - 25 gb Disk | ens160: 10.10.10.88 (Public) - ens192: 10.10.11.88 (Internal) |
+![](/images/img-haproxy-keepalived/ka-phanhoach.PNG)
 
 ### Mô hình
 
