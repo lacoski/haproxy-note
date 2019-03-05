@@ -10,11 +10,21 @@ Dịch vụ __keepalived__ sử dụng với mục đích tạo ra virtual ip ad
 ## Phần 1. Chuẩn bị
 ### Phân hoạch
 
+| Hostname | Hardware                      | Interface                                               |
+|----------|-------------------------------|---------------------------------------------------------|
+| node1    | 2 Cpu - 2gb Ram - 25 gb Disk | ens160: 10.10.10.86 (Public) - ens192: 10.10.11.86 (Internal) |
+| node2    | 2 Cpu - 2gb Ram - 25 gb Disk | ens160: 10.10.10.87 (Public) - ens192: 10.10.11.87 (Internal) |
+| node3    | 2 Cpu - 2gb Ram - 25 gb Disk | ens160: 10.10.10.88 (Public) - ens192: 10.10.11.88 (Internal) |
+
 ### Mô hình
 
 Mô hình triển khai
 
+![](/images/img-haproxy-keepalived/keepalive-haproxy.PNG)
+
 Mô hình hoạt động
+
+![](/images/img-haproxy-keepalived/haproxy-keepalived-work.PNG)
 
 ## Phần 2. Cầu hình Apache
 
@@ -213,23 +223,8 @@ systemctl start keepalived
 ```
 
 Kiểm tra `node1`, chúng ta sẽ thấy IP VIP do keepalive quản lý
-```
-[root@node1 ~]# ip a
-1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
-    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-    inet 127.0.0.1/8 scope host lo
-       valid_lft forever preferred_lft forever
-    inet6 ::1/128 scope host
-       valid_lft forever preferred_lft forever
-2: ens160: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
-    link/ether 00:50:56:b7:26:bd brd ff:ff:ff:ff:ff:ff
-    inet 10.10.10.86/24 brd 10.10.10.255 scope global noprefixroute ens160
-       valid_lft forever preferred_lft forever
-    inet 10.10.10.89/24 scope global secondary ens160
-       valid_lft forever preferred_lft forever
-    inet6 fe80::250:56ff:feb7:26bd/64 scope link
-       valid_lft forever preferred_lft forever
-```
+
+![](/images/img-haproxy-keepalived/ka-pic1.png)
 
 ## Phần 3. Cài đặt Haproxy bản 1.8
 
@@ -292,9 +287,9 @@ listen web-backend
     option  httpclose
     option  httplog
     option  forwardfor
-    server node1 10.10.10.86:8081 check cookie node1 inter 5s fastinter 2s rise 3 fall 3
-    server node2 10.10.10.87:8081 check cookie node2 inter 5s fastinter 2s rise 3 fall 3
-    server node3 10.10.10.88:8081 check cookie node3 inter 5s fastinter 2s rise 3 fall 3' > /etc/haproxy/haproxy.cfg
+    server node1 10.10.11.86:8081 check cookie node1 inter 5s fastinter 2s rise 3 fall 3
+    server node2 10.10.11.87:8081 check cookie node2 inter 5s fastinter 2s rise 3 fall 3
+    server node3 10.10.11.88:8081 check cookie node3 inter 5s fastinter 2s rise 3 fall 3' > /etc/haproxy/haproxy.cfg
 ```
 
 Cấu hình Log cho HAProxy
@@ -325,3 +320,16 @@ Tắt dịch vụ HAProxy
 systemctl restart haproxy
 systemctl enable haproxy
 ```
+
+Kết quả
+
+![](/images/img-haproxy-keepalived/ka-pic2.png)
+
+Do tôi cấu hình sticky session trên request vì vậy trong một thời điểm chỉ có thể kết nối tới 1 webserver. Để truy cập tới các webserver còn lại, các bạn có thể tạo phiên ẩn danh và truy cập lại.
+
+![](/images/img-haproxy-keepalived/ka-pic3.png)
+
+
+Khi truy cập trình ẩn danh
+
+![](/images/img-haproxy-keepalived/ka-pic4.png)
