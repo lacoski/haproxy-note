@@ -23,6 +23,15 @@ Network     eth0: Network Public
 
 ## Cài đặt
 
+### Chuẩn bị
+```
+sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux
+sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+systemctl stop firewalld
+systemctl disable firewalld
+init 6
+```
+
 ### Bước 1: Cài đặt, cấu hình HTTPD
 
 ```
